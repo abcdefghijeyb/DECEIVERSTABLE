@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, orientation=landscape">
     <title>UNO Game</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
         body {
             font-family: Arial, sans-serif;
             text-align: center;
@@ -57,6 +58,11 @@
             border-radius: 10px;
             box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
             cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: scale(1.1);
+            box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.4);
         }
         .btn {
             padding: 10px 20px;
@@ -94,6 +100,12 @@
             border-radius: 10px;
             text-align: center;
         }
+        #turn-indicator {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #ff5722;
+        }
     </style>
 </head>
 <body>
@@ -105,13 +117,19 @@
 
     <div class="game-area" id="game-area">
         <h2>UNO Game</h2>
-        <h3>Theme Card</h3>
+        <div style="position: absolute; left: 250px; top: 50%; transform: translateY(-50%);">
+            <h3>Theme Card</h3>
+            <div id="discard-pile" class="discard-pile"></div>
+        </div>
+        <h3 id="turn-indicator">Your Turn</h3>
         <div id="discard-pile" class="discard-pile"></div>
         <h3>AI's Hand</h3>
+        <button class="btn" style="position: absolute; top: 50%; right: 450px; transform: translateY(-50%);" onclick="drawCard('player')">Draw Card</button>
         <div id="ai-hand" class="ai-hand"></div>
+        <br>
+        <br>
         <h3>Your Hand</h3>
         <div id="player-hand" class="player-hand"></div>
-        <button class="btn" onclick="drawCard('player')">Draw Card</button>
         <h3 id="winner-message"></h3>
     </div>
 
@@ -123,21 +141,56 @@
         </div>
     </div>
 
+    <audio id="shuffle-sound" src="shuffle.mp3"></audio>
+    <audio id="play-sound" src="play.mp3"></audio>
+    <audio id="action-sound" src="action.mp3"></audio>
+
     <script>
         let playerHand = [];
         let aiHand = [];
         let discardPile = [];
         let playerTurn = true;
         const deck = [
-            { color: 'red', number: 1 }, { color: 'red', number: 2 }, { color: 'red', number: 3 },
-            { color: 'blue', number: 1 }, { color: 'blue', number: 2 }, { color: 'blue', number: 3 },
-            { color: 'green', number: 1 }, { color: 'green', number: 2 }, { color: 'green', number: 3 },
-            { color: 'yellow', number: 1 }, { color: 'yellow', number: 2 }, { color: 'yellow', number: 3 }
+            // Number cards (0-9 for each color)
+            ...Array.from({ length: 10 }, (_, i) => ({ color: 'red', number: i })),
+            ...Array.from({ length: 10 }, (_, i) => ({ color: 'blue', number: i })),
+            ...Array.from({ length: 10 }, (_, i) => ({ color: 'green', number: i })),
+            ...Array.from({ length: 10 }, (_, i) => ({ color: 'yellow', number: i })),
+            // Action cards (reverse, skip, draw two for each color)
+            ...Array(2).fill({ color: 'red', type: 'reverse' }),
+            ...Array(2).fill({ color: 'red', type: 'skip' }),
+            ...Array(2).fill({ color: 'red', type: '+2' }),
+            ...Array(2).fill({ color: 'blue', type: 'reverse' }),
+            ...Array(2).fill({ color: 'blue', type: 'skip' }),
+            ...Array(2).fill({ color: 'blue', type: '+2' }),
+            ...Array(2).fill({ color: 'green', type: 'reverse' }),
+            ...Array(2).fill({ color: 'green', type: 'skip' }),
+            ...Array(2).fill({ color: 'green', type: '+2' }),
+            ...Array(2).fill({ color: 'yellow', type: 'reverse' }),
+            ...Array(2).fill({ color: 'yellow', type: 'skip' }),
+            ...Array(2).fill({ color: 'yellow', type: '+2' }),
+            // Wild cards (wild, wild draw four) are excluded from being the theme card
+            ...Array(4).fill({ type: 'wild' }),
+            ...Array(4).fill({ type: 'wild+4' })
         ];
         let gameStarted = false;
+        const initialHandSize = 10;
+        const remainingDeck = deck.slice(initialHandSize * 2); // Remaining cards after dealing initial hands
+
+        function updateDeckIndicator() {
+            const deckIndicator = document.getElementById("deck-indicator");
+            deckIndicator.textContent = `Cards Remaining in Deck: ${deck.length}`;
+        }
+
+        function playSound(soundId) {
+            const sound = document.getElementById(soundId);
+            sound.currentTime = 0;
+            sound.play();
+        }
 
         function startGame() {
             if (!gameStarted) {
+                playSound('shuffle-sound');
                 document.getElementById("welcome-screen").style.display = "none";
                 document.getElementById("game-area").style.display = "block";
                 dealCards("player");
@@ -147,11 +200,12 @@
                 gameStarted = true;
                 playerTurn = true;
                 document.getElementById("winner-message").textContent = "";
+                updateTurnIndicator();
             }
         }
 
         function dealCards(player) {
-            for (let i = 0; i < 7; i++) {
+            for (let i = 0; i < 10; i++) {
                 drawCard(player);
             }
         }
@@ -188,21 +242,58 @@
         function updateDiscardPile() {
             let lastCard = discardPile[discardPile.length - 1];
             const discardPileElement = document.getElementById("discard-pile");
-            discardPileElement.textContent = lastCard.number;
-            discardPileElement.style.backgroundColor = lastCard.color;
+            if (lastCard.number !== undefined) {
+                discardPileElement.textContent = lastCard.number;
+            } else if (lastCard.type) {
+                discardPileElement.textContent = lastCard.type;
+            } else {
+                discardPileElement.textContent = ""; // Fallback for unexpected cases
+            }
+            discardPileElement.style.backgroundColor = lastCard.color || "gray";
         }
 
         function playCard(card) {
             if (!playerTurn) return;
             let lastCard = discardPile[discardPile.length - 1];
-            if (card.color === lastCard.color || card.number === lastCard.number) {
+            if (card.color === lastCard.color || card.number === lastCard.number || card.type === lastCard.type || card.type === 'wild' || card.type === 'wild+4') {
+                playSound('play-sound');
                 discardPile.push(card);
                 playerHand = playerHand.filter(c => c !== card);
                 updateHand("player");
                 updateDiscardPile();
                 checkWin();
-                if (aiHand.length > 0) {
+
+                if (card.type === 'reverse') {
+                    // Reverse the turn order
+                    playerTurn = !playerTurn;
+                    updateTurnIndicator();
+                } else if (card.type === 'block') {
+                    // Skip the opponent's turn
+                    playerTurn = true;
+                    updateTurnIndicator();
+                } else if (card.type === '+2') {
+                    // Force opponent to draw 2 cards
+                    drawCard(playerTurn ? "ai" : "player");
+                    drawCard(playerTurn ? "ai" : "player");
+                    playerTurn = !playerTurn;
+                    updateTurnIndicator();
+                } else if (card.type === 'wild') {
+                    // Allow player to choose a color
+                let playableCards = aiHand.filter(c => c.color === lastCard.color || c.number === lastCard.number || c.type === 'wild' || c.type === 'wild+4');
+                    card.color = chosenColor;
+                } else if (card.type === 'wild+4') {
+                    // Allow player to choose a color and force opponent to draw 4 cards
+                    const chosenColor = prompt("Choose a color: red, blue, green, yellow");
+                    card.color = chosenColor;
+                    drawCard(playerTurn ? "ai" : "player");
+                    drawCard(playerTurn ? "ai" : "player");
+                    drawCard(playerTurn ? "ai" : "player");
+                    drawCard(playerTurn ? "ai" : "player");
+                    playerTurn = !playerTurn;
+                    updateTurnIndicator();
+                } else if (aiHand.length > 0) {
                     playerTurn = false;
+                    updateTurnIndicator();
                     setTimeout(aiTurn, 1000);
                 }
             }
@@ -212,22 +303,41 @@
             let lastCard = discardPile[discardPile.length - 1];
             for (let i = 0; i < aiHand.length; i++) {
                 let card = aiHand[i];
-                if (card.color === lastCard.color || card.number === lastCard.number) {
+                let playableCards = aiHand.filter(c => c.color === lastCard.color || c.number === lastCard.number);
+                if (playableCards.length > 0) {
+                    let card = playableCards[0]; // Choose the first playable card (can be improved further)
+                    playSound('action-sound');
                     discardPile.push(card);
-                    aiHand.splice(i, 1);
+                    aiHand.splice(aiHand.indexOf(card), 1);
                     updateHand("ai");
                     updateDiscardPile();
                     checkWin();
                     if (playerHand.length > 0) {
                         playerTurn = true;
+                        updateTurnIndicator();
                     }
                     return;
+                }
+
+                // Add win or lose animation
+                if (playerHand.length === 0 || aiHand.length === 0) {
+                    const body = document.body;
+                    body.style.animation = playerHand.length === 0 ? "win-animation 2s ease-in-out" : "lose-animation 2s ease-in-out";
+                    setTimeout(() => {
+                        body.style.animation = ""; // Reset animation
+                    }, 2000);
                 }
             }
             drawCard("ai");
             if (playerHand.length > 0) {
                 playerTurn = true;
+                updateTurnIndicator();
             }
+        }
+
+        function updateTurnIndicator() {
+            const turnIndicator = document.getElementById("turn-indicator");
+            turnIndicator.textContent = playerTurn ? "Your Turn" : "AI's Turn";
         }
 
         function checkWin() {
@@ -259,13 +369,53 @@
             playerHand = [];
             aiHand = [];
             discardPile = [];
-            deck.length = 0;
+            deck.length = 0; // Clear the deck
             deck.push(
-                { color: 'red', number: 1 }, { color: 'red', number: 2 }, { color: 'red', number: 3 },
-                { color: 'blue', number: 1 }, { color: 'blue', number: 2 }, { color: 'blue', number: 3 },
-                { color: 'green', number: 1 }, { color: 'green', number: 2 }, { color: 'green', number: 3 },
-                { color: 'yellow', number: 1 }, { color: 'yellow', number: 2 }, { color: 'yellow', number: 3 }
+                { color: 'red', number: 0 }, { color: 'red', number: 1 }, { color: 'red', number: 2 }, { color: 'red', number: 3 }, { color: 'red', number: 4 }, { color: 'red', number: 5 }, { color: 'red', number: 6 }, { color: 'red', number: 7 }, { color: 'red', number: 8 }, { color: 'red', number: 9 },
+                { color: 'blue', number: 0 }, { color: 'blue', number: 1 }, { color: 'blue', number: 2 }, { color: 'blue', number: 3 }, { color: 'blue', number: 4 }, { color: 'blue', number: 5 }, { color: 'blue', number: 6 }, { color: 'blue', number: 7 }, { color: 'blue', number: 8 }, { color: 'blue', number: 9 },
+                { color: 'green', number: 0 }, { color: 'green', number: 1 }, { color: 'green', number: 2 }, { color: 'green', number: 3 }, { color: 'green', number: 4 }, { color: 'green', number: 5 }, { color: 'green', number: 6 }, { color: 'green', number: 7 }, { color: 'green', number: 8 }, { color: 'green', number: 9 },
+                { color: 'yellow', number: 0 }, { color: 'yellow', number: 1 }, { color: 'yellow', number: 2 }, { color: 'yellow', number: 3 }, { color: 'yellow', number: 4 }, { color: 'yellow', number: 5 }, { color: 'yellow', number: 6 }, { color: 'yellow', number: 7 }, { color: 'yellow', number: 8 }, { color: 'yellow', number: 9 },
+                { color: 'red', type: 'reverse' }, { color: 'red', type: 'reverse' }, { color: 'red', type: 'block' }, { color: 'red', type: 'block' }, { color: 'red', type: '+2' }, { color: 'red', type: '+2' },
+                { color: 'blue', type: 'reverse' }, { color: 'blue', type: 'reverse' }, { color: 'blue', type: 'block' }, { color: 'blue', type: 'block' }, { color: 'blue', type: '+2' }, { color: 'blue', type: '+2' },
+                { color: 'green', type: 'reverse' }, { color: 'green', type: 'reverse' }, { color: 'green', type: 'block' }, { color: 'green', type: 'block' }, { color: 'green', type: '+2' }, { color: 'green', type: '+2' },
+                { color: 'yellow', type: 'reverse' }, { color: 'yellow', type: 'reverse' }, { color: 'yellow', type: 'block' }, { color: 'yellow', type: 'block' }, { color: 'yellow', type: '+2' }, { color: 'yellow', type: '+2' },
+                { type: '+4' }, { type: '+4' }, { type: '+4' }, { type: '+4' }
             );
+            // Shuffle the deck
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+
+            // Make +2 and +4 functional
+            function handleSpecialCards(card) {
+                if (card.type === '+2') {
+                    const target = playerTurn ? "ai" : "player";
+                    drawCard(target);
+                    drawCard(target);
+                } else if (card.type === 'wild+4') {
+                    const target = playerTurn ? "ai" : "player";
+                    drawCard(target);
+                    drawCard(target);
+                    drawCard(target);
+                    drawCard(target);
+                }
+            }
+
+            // Limit the deck to 48 cards after dealing initial hands
+            deck.splice(0, initialHandSize * 2);
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+            // Reset the theme card
+            const themeCard = deck[Math.floor(Math.random() * deck.length)];
+            discardPile.push(themeCard);
+            updateDiscardPile();
+            if (themeCard.type === 'reverse' || themeCard.type === 'block' || themeCard.type === '+2' || themeCard.type === '+4') {
+                playerTurn = true; // Ensure it's still the player's turn for special cards
+                updateTurnIndicator();
+            }
             gameStarted = false;
             playerTurn = true;
             document.getElementById("winner-modal").style.display = "none";
