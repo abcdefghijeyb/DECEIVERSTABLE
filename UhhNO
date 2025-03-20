@@ -157,13 +157,13 @@
 </head>
 <body>
     <div class="container" id="welcome-screen">
-        <h1>Welcome to Uhh-NO Game</h1>
+        <h1>Welcome to UNO Game</h1>
         <p>Click the button below to start the game!</p>
         <button class="btn" onclick="startGame()">Start Game</button>
         <button class="btn" id="view-mechanics">View Game Mechanics</button> </div>
 
     <div class="game-area" id="game-area">
-        <h2>Uhh-NO Game</h2>
+        <h2>UNO Game</h2>
         <div style="position: absolute; left: 250px; top: 50%; transform: translateY(-50%);">
             <h3>Theme Card</h3>
             <div id="discard-pile" class="discard-pile"></div>
@@ -210,15 +210,15 @@
                 </li>
                 <li><strong>Card Types:</strong>
                     <ul>
-                         <li><strong>Number Cards (1-9):</strong> Match the color or number.</li>
+                         <li><strong>Number Cards (0-9):</strong> Match the color or number.</li>
                          <li><strong>Reverse:</strong> Changes the direction of play.</li>
                          <li><strong>Skip:</strong> Skips the next player's turn.</li>
-                         <li><strong>Draw Two (+2):</strong> Forces the next player to draw two cards and lose their turn.</li>
-                         <li><strong>Wild Change Card:</strong> Can be played on any card. The player chooses the color.</li>
-                         <li><strong>Wild Draw Four (+4):</strong> Can be played on any card. The player chooses the color. The next player draws four cards and loses their turn.</li>
+                         <li><strong>Draw Two (+3):</strong> Forces the next player to draw two cards and lose their turn.</li>
+                         <li><strong>Wild:</strong> Can be played on any card. The player chooses the color.</li>
+                         <li><strong>Wild Draw Four (+5):</strong> Can be played on any card. The player chooses the color. The next player draws four cards and loses their turn.</li>
                     </ul>
                 </li>
-                <li><strong>Winning:</strong> The first player to get rid of their card wins the game.</li>
+                <li><strong>Winning:</strong> The first player to play their last card wins the game.</li>
             </ul>
         </div>
     </div>
