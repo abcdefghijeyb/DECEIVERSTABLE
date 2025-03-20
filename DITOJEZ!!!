@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, orientation=landscape">
+    <meta name="viewport" content="width=device-width, orientation:landscape">
     <title>UNO Game</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
         body {
             font-family: Arial, sans-serif;
             text-align: center;
@@ -106,6 +107,52 @@
             margin: 10px 0;
             color: #ff5722;
         }
+        /* New styles for the popup */
+        #mechanics-modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        #mechanics-modal .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 10px;
+            text-align: left;
+            position: relative;
+        }
+        #mechanics-modal .close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            color: #888;
+        }
+        #mechanics-modal .close-button:hover {
+            color: #333;
+        }
+        #mechanics-modal h2 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #mechanics-modal ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin-bottom: 20px;
+        }
+        #mechanics-modal li {
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -113,7 +160,7 @@
         <h1>Welcome to UNO Game</h1>
         <p>Click the button below to start the game!</p>
         <button class="btn" onclick="startGame()">Start Game</button>
-    </div>
+        <button class="btn" id="view-mechanics">View Game Mechanics</button> </div>
 
     <div class="game-area" id="game-area">
         <h2>UNO Game</h2>
@@ -138,6 +185,41 @@
             <h2 id="modal-title"></h2>
             <p id="modal-text"></p>
             <button class="btn" onclick="resetGame()">Play Again</button>
+        </div>
+    </div>
+
+    <div id="mechanics-modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>How to Play UNO</h2>
+            <ul>
+                <li><strong>Objective:</strong> Be the first player to get rid of all your cards.</li>
+                <li><strong>Setup:</strong>
+                    <ul>
+                        <li>Each player starts with 10 cards.</li>
+                        <li>The remaining cards form the draw pile.</li>
+                        <li>The top card of the draw pile is placed face-up to start the discard pile.</li>
+                    </ul>
+                </li>
+                <li><strong>Playing:</strong>
+                    <ul>
+                        <li>Players take turns matching the top card of the discard pile by color, number, or symbol.</li>
+                        <li>If a player cannot play a card, they must draw a card from the draw pile.</li>
+                        <li>Wild cards can be played on any color or number.  The player who plays the wild card chooses the new color.</li>
+                    </ul>
+                </li>
+                <li><strong>Card Types:</strong>
+                    <ul>
+                         <li><strong>Number Cards (0-9):</strong> Match the color or number.</li>
+                         <li><strong>Reverse:</strong> Changes the direction of play.</li>
+                         <li><strong>Skip:</strong> Skips the next player's turn.</li>
+                         <li><strong>Draw Two (+3):</strong> Forces the next player to draw two cards and lose their turn.</li>
+                         <li><strong>Wild:</strong> Can be played on any card. The player chooses the color.</li>
+                         <li><strong>Wild Draw Four (+5):</strong> Can be played on any card. The player chooses the color. The next player draws four cards and loses their turn.</li>
+                    </ul>
+                </li>
+                <li><strong>Winning:</strong> The first player to play their last card wins the game.</li>
+            </ul>
         </div>
     </div>
 
@@ -267,20 +349,27 @@
                     // Reverse the turn order
                     playerTurn = !playerTurn;
                     updateTurnIndicator();
-                } else if (card.type === 'block') {
+                    setTimeout(aiTurn, 1000); // Call AI's turn after reversing
+                } else if (card.type === 'skip') {
                     // Skip the opponent's turn
-                    playerTurn = true;
+                    playerTurn = false; // Corrected: It should be the AI's turn next
                     updateTurnIndicator();
+                    setTimeout(aiTurn, 1000);
                 } else if (card.type === '+2') {
                     // Force opponent to draw 2 cards
                     drawCard(playerTurn ? "ai" : "player");
                     drawCard(playerTurn ? "ai" : "player");
                     playerTurn = !playerTurn;
                     updateTurnIndicator();
+                    setTimeout(aiTurn, 1000);
                 } else if (card.type === 'wild') {
                     // Allow player to choose a color
-                let playableCards = aiHand.filter(c => c.color === lastCard.color || c.number === lastCard.number || c.type === 'wild' || c.type === 'wild+4');
+                    const chosenColor = prompt("Choose a color: red, blue, green, yellow");
                     card.color = chosenColor;
+                    playerTurn = false; // Switch turn after wild card is played
+                    updateTurnIndicator();
+                    setTimeout(aiTurn, 1000);
+
                 } else if (card.type === 'wild+4') {
                     // Allow player to choose a color and force opponent to draw 4 cards
                     const chosenColor = prompt("Choose a color: red, blue, green, yellow");
@@ -291,43 +380,48 @@
                     drawCard(playerTurn ? "ai" : "player");
                     playerTurn = !playerTurn;
                     updateTurnIndicator();
-                } else if (aiHand.length > 0) {
-                    playerTurn = false;
-                    updateTurnIndicator();
                     setTimeout(aiTurn, 1000);
+                } else {
+                    playerTurn = false; // Corrected: switch to AI's turn
+                    updateTurnIndicator();
+                    setTimeout(aiTurn, 1000); // Start AI's turn after the player plays a card
                 }
             }
         }
 
         function aiTurn() {
+            if (playerHand.length === 0 || aiHand.length === 0) return;
+
             let lastCard = discardPile[discardPile.length - 1];
+            let playableCards = [];
+
             for (let i = 0; i < aiHand.length; i++) {
                 let card = aiHand[i];
-                let playableCards = aiHand.filter(c => c.color === lastCard.color || c.number === lastCard.number);
-                if (playableCards.length > 0) {
-                    let card = playableCards[0]; // Choose the first playable card (can be improved further)
-                    playSound('action-sound');
-                    discardPile.push(card);
-                    aiHand.splice(aiHand.indexOf(card), 1);
-                    updateHand("ai");
-                    updateDiscardPile();
-                    checkWin();
-                    if (playerHand.length > 0) {
-                        playerTurn = true;
-                        updateTurnIndicator();
-                    }
-                    return;
-                }
-
-                // Add win or lose animation
-                if (playerHand.length === 0 || aiHand.length === 0) {
-                    const body = document.body;
-                    body.style.animation = playerHand.length === 0 ? "win-animation 2s ease-in-out" : "lose-animation 2s ease-in-out";
-                    setTimeout(() => {
-                        body.style.animation = ""; // Reset animation
-                    }, 2000);
+                if (card.color === lastCard.color || card.number === lastCard.number || card.type === lastCard.type || card.type === 'wild' || card.type === 'wild+4') {
+                    playableCards.push(card);
                 }
             }
+
+            if (playableCards.length > 0) {
+                let cardToPlay = playableCards[0];
+                if(cardToPlay.type === 'wild' || cardToPlay.type === 'wild+4'){
+                    const colors = ['red', 'blue', 'green', 'yellow'];
+                    const randomColor = colors[Math.floor(Math.random() * colors.length)]
+                    cardToPlay.color = randomColor;
+                }
+                playSound('action-sound');
+                discardPile.push(cardToPlay);
+                aiHand.splice(aiHand.indexOf(cardToPlay), 1);
+                updateHand("ai");
+                updateDiscardPile();
+                checkWin();
+                if (playerHand.length > 0) {
+                    playerTurn = true;
+                    updateTurnIndicator();
+                }
+                return;
+            }
+
             drawCard("ai");
             if (playerHand.length > 0) {
                 playerTurn = true;
@@ -379,7 +473,8 @@
                 { color: 'blue', type: 'reverse' }, { color: 'blue', type: 'reverse' }, { color: 'blue', type: 'block' }, { color: 'blue', type: 'block' }, { color: 'blue', type: '+2' }, { color: 'blue', type: '+2' },
                 { color: 'green', type: 'reverse' }, { color: 'green', type: 'reverse' }, { color: 'green', type: 'block' }, { color: 'green', type: 'block' }, { color: 'green', type: '+2' }, { color: 'green', type: '+2' },
                 { color: 'yellow', type: 'reverse' }, { color: 'yellow', type: 'reverse' }, { color: 'yellow', type: 'block' }, { color: 'yellow', type: 'block' }, { color: 'yellow', type: '+2' }, { color: 'yellow', type: '+2' },
-                { type: '+4' }, { type: '+4' }, { type: '+4' }, { type: '+4' }
+                { type: 'wild' }, { type: 'wild' }, { type: 'wild' }, { type: 'wild' },
+                { type: 'wild+4' }, { type: 'wild+4' }, { type: 'wild+4' }, { type: 'wild+4' }
             );
             // Shuffle the deck
             for (let i = deck.length - 1; i > 0; i--) {
@@ -421,6 +516,24 @@
             document.getElementById("winner-modal").style.display = "none";
             startGame();
         }
+
+        // Event listener for the View Game Mechanics button
+        document.getElementById('view-mechanics').addEventListener('click', () => {
+            document.getElementById('mechanics-modal').style.display = 'block';
+        });
+
+        // Event listener for closing the popup
+        document.querySelector('#mechanics-modal .close-button').addEventListener('click', () => {
+            document.getElementById('mechanics-modal').style.display = 'none';
+        });
+
+        // Close the popup if the user clicks outside of it
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('mechanics-modal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html>
