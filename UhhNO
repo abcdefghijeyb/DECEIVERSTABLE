@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -232,28 +233,44 @@
         let aiHand = [];
         let discardPile = [];
         let playerTurn = true;
-        const deck = [
-            // Number cards (0-9 for each color)
+
+        // Define and initialize the deck
+        let deck = [
             ...Array.from({ length: 10 }, (_, i) => ({ color: 'red', number: i })),
             ...Array.from({ length: 10 }, (_, i) => ({ color: 'blue', number: i })),
             ...Array.from({ length: 10 }, (_, i) => ({ color: 'green', number: i })),
             ...Array.from({ length: 10 }, (_, i) => ({ color: 'yellow', number: i })),
-            // Action cards (reverse, skip, draw two for each color)
             ...Array(2).fill({ color: 'red', type: 'reverse' }),
             ...Array(2).fill({ color: 'red', type: 'skip' }),
-            ...Array(2).fill({ color: 'red', type: '+2' }),
+            ...Array(2).fill({ color: 'red', type: '+2', action: (target) => {
+                drawCard(target);
+                drawCard(target);
+            }}),
             ...Array(2).fill({ color: 'blue', type: 'reverse' }),
             ...Array(2).fill({ color: 'blue', type: 'skip' }),
-            ...Array(2).fill({ color: 'blue', type: '+2' }),
+            ...Array(2).fill({ color: 'blue', type: '+2', action: (target) => {
+                drawCard(target);
+                drawCard(target);
+            }}),
             ...Array(2).fill({ color: 'green', type: 'reverse' }),
             ...Array(2).fill({ color: 'green', type: 'skip' }),
-            ...Array(2).fill({ color: 'green', type: '+2' }),
+            ...Array(2).fill({ color: 'green', type: '+2', action: (target) => {
+                drawCard(target);
+                drawCard(target);
+            }}),
             ...Array(2).fill({ color: 'yellow', type: 'reverse' }),
             ...Array(2).fill({ color: 'yellow', type: 'skip' }),
-            ...Array(2).fill({ color: 'yellow', type: '+2' }),
-            // Wild cards (wild, wild draw four) are excluded from being the theme card
+            ...Array(2).fill({ color: 'yellow', type: '+2', action: (target) => {
+                drawCard(target);
+                drawCard(target);
+            }}),
             ...Array(4).fill({ type: 'wild' }),
-            ...Array(4).fill({ type: 'wild+4' })
+            ...Array(4).fill({ type: 'wild+4', action: (target) => {
+                drawCard(target);
+                drawCard(target);
+                drawCard(target);
+                drawCard(target);
+            }})
         ];
         let gameStarted = false;
         const initialHandSize = 10;
