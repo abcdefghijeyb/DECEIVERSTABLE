@@ -61,7 +61,7 @@
             padding: var(--gap-size);
             border-radius: var(--border-radius);
             width: 100%;
-            max-width: 950px;
+            max-width: 1850px;
             border: 2px solid var(--theme-border-light); /* Subtle border */
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); /* Stronger shadow on dark bg */
         }
