@@ -1,9 +1,9 @@
 <?php
 
 $hostName = "localhost";
-$dbUser = "root";
-$dbPassword = "";
-$dbName = "login_register";
+$dbUser = "u873833550_cardsofchaos";
+$dbPassword = "Angmgaibon.gg11";
+$dbName = "u873833550_login_register";
 $conn = mysqli_connect($hostName, $dbUser, $dbPassword, $dbName);
     if(!$conn){
         die("Something went wrong.");
