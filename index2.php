@@ -1,9 +1,9 @@
 <?php
 
 $hostName = "localhost";
-$dbUser = "root";
-$dbPassword = "";
-$dbName = "login_register";
+$dbUser = "u873833550_cardsofchaos";
+$dbPassword = "Angmgaibon.gg11";
+$dbName = "u873833550_login_register";
 $conn = mysqli_connect($hostName, $dbUser, $dbPassword, $dbName);
     if(!$conn){
         die("Something went wrong.");
@@ -852,7 +852,7 @@ $conn = mysqli_connect($hostName, $dbUser, $dbPassword, $dbName);
         
         <div class="social-icons">
 
-    <a href="https:www.facebook.com/jvlovebritney" target="_blank" aria-label="Facebook">
+    <a href="https://www.facebook.com/jvlovebritney" target="_blank" aria-label="Facebook">
         <img src="fb.jpg" alt="Facebook">
     <a href="https://www.facebook.com/jaysonperocho22/" target="_blank" aria-label="Facebook">
         <img src="fb.jpg" alt="Facebook">
